@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Franchise Blueprint - Hyper-Local Business Agent</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        accent: {
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e',
+                        },
+                        panel: {
+                            light: '#ffffff',
+                            dark: '#111827',
+                            borderLight: '#e5e7eb',
+                            borderDark: '#1f2937'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PDF.js for canvas rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        /* Custom scrollbar styling for a premium look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+        /* Pulse Animation for Connection Status */
+        @keyframes statusPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        .pulse-indicator {
+            animation: statusPulse 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-gradient-to-tr from-brand-600 to-indigo-400 rounded-lg text-white shadow-lg shadow-brand-500/20">
+                <i data-lucide="briefcase" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-brand-600 to-indigo-400 bg-clip-text text-transparent">
+                    The Franchise Blueprint
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">The Hyper-Local Business Grounding Agent</p>
+            </div>
+        </div>
+
+        <!-- Middle: Responsive Mobile Workspace Toggle Tabs (Only shown on small screens) -->
+        <div class="flex md:hidden bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-full max-w-sm">
+            <button onclick="switchMobilePanel('left')" id="mobile-tab-left" class="flex-1 py-1 text-xs font-medium rounded-md text-center bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white">
+                Sources
+            </button>
+            <button onclick="switchMobilePanel('center')" id="mobile-tab-center" class="flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400">
+                Studio
+            </button>
+            <button onclick="switchMobilePanel('right')" id="mobile-tab-right" class="flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400">
+                AI Companion
+            </button>
+        </div>
+
+        <!-- Right Side: API Key and Theme Config -->
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors" title="Toggle Theme">
+                <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Gemini API Key Container -->
+            <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-64 relative">
+                <i data-lucide="key" class="w-4 h-4 text-slate-400 shrink-0 ml-1"></i>
+                <input type="password" id="api-key-input" oninput="handleApiKeyChange()" placeholder="Gemini API Key..." class="bg-transparent text-xs outline-none w-full pr-12 text-slate-800 dark:text-slate-100" />
+                <button onclick="togglePasswordVisibility()" class="absolute right-8 text-slate-400 hover:text-slate-250">
+                    <i id="eye-icon" data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </button>
+                <!-- Status Badge -->
+                <div id="status-indicator" class="flex items-center shrink-0 pr-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-accent-amber pulse-indicator" id="status-dot"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-1 flex overflow-hidden relative">
+
+        <!-- PANEL 1: LEFT SIDEBAR (Document & Resource Manager) -->
+        <aside id="panel-left" class="w-full md:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 md:block">
+            
+            <!-- Upload Zone -->
+            <div class="flex flex-col gap-2">
+                <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase flex items-center justify-between">
+                    Resource Upload
+                    <span class="text-[10px] text-brand-500 font-bold lowercase">Grounding Files</span>
+                </h3>
+                <div id="drop-zone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-800/10 flex flex-col items-center justify-center gap-2">
+                    <i data-lucide="cloud-upload" class="w-8 h-8 text-slate-400"></i>
+                    <p class="text-xs font-medium">Drag & Drop or Click</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500">Supports .txt, .csv, .json, .md, .pdf files</p>
+                    <input type="file" id="file-input" class="hidden" multiple accept=".txt,.csv,.json,.md,.pdf" />
+                </div>
+            </div>
+
+            <!-- Active Sources List -->
+            <div class="flex-1 flex flex-col gap-2 min-h-[250px]">
+                <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase flex items-center justify-between">
+                    Active Grounding Context
+                    <span id="active-count" class="bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 px-1.5 py-0.5 rounded text-[10px] font-bold">0/0</span>
+                </h3>
+                <div id="sources-list" class="space-y-2 max-h-[400px] overflow-y-auto">
+                    <!-- Dynamic sources will load here -->
+                    <div class="text-center py-8 text-slate-400 dark:text-slate-500 text-xs flex flex-col items-center gap-2">
+                        <i data-lucide="files" class="w-8 h-8 opacity-40"></i>
+                        <p>No documents uploaded yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Summary Widget -->
+            <div class="bg-brand-50/50 dark:bg-brand-950/20 border border-brand-100 dark:border-brand-900/30 rounded-xl p-3 flex flex-col gap-2">
+                <h4 class="text-xs font-bold text-brand-800 dark:text-brand-300 flex items-center gap-1.5">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-brand-500"></i> Localized Franchise Sandbox
+                </h4>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    All toggled materials build a secure in-memory vector database context instantly injected directly to your Gemini Agent requests.
+                </p>
+            </div>
+        </aside>
+
+        <!-- PANEL 2: CENTER PANEL (Visual Output Studio) -->
+        <section id="panel-center" class="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-slate-900/20 border-r border-slate-200 dark:border-slate-800 hidden md:flex">
+            <!-- Studio Tab Controls -->
+            <div class="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-2 gap-1 shrink-0">
+                <button onclick="switchStudioTab('viewer')" id="tab-viewer" class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-500 text-white shadow-sm transition-all">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Document Viewer
+                </button>
+                <button onclick="switchStudioTab('finance')" id="tab-finance" class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Financial Analyst (Excel)
+                </button>
+                <button onclick="switchStudioTab('playbook')" id="tab-playbook" class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Playbook Generator
+                </button>
+            </div>
+
+            <!-- Tab Content Viewport -->
+            <div class="flex-1 p-4 overflow-y-auto relative">
+                
+                <!-- 1. Document Viewer Tab -->
+                <div id="content-viewer" class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <div>
+                            <h2 id="doc-title" class="text-base font-bold text-slate-800 dark:text-slate-200">No Document Selected</h2>
+                            <p id="doc-meta" class="text-xs text-slate-400">Select an active grounding source from the Left Panel to view content.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="doc-size-badge" class="hidden text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full"></span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive PDF Canvas Tool Header (hidden by default) -->
+                    <div id="pdf-controls" class="hidden flex items-center justify-between bg-slate-100 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <button onclick="pdfPrevPage()" class="p-1.5 rounded bg-white dark:bg-slate-700 hover:bg-brand-500 hover:text-white transition-all">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <span class="text-xs font-medium">Page <span id="pdf-current-page" class="font-bold text-brand-500">1</span> of <span id="pdf-total-pages">1</span></span>
+                            <button onclick="pdfNextPage()" class="p-1.5 rounded bg-white dark:bg-slate-700 hover:bg-brand-500 hover:text-white transition-all">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                            <button onclick="pdfZoomOut()" class="p-1.5 rounded bg-white dark:bg-slate-700 hover:bg-brand-500 hover:text-white transition-all">
+                                <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                            </button>
+                            <span id="pdf-zoom-val">100%</span>
+                            <button onclick="pdfZoomIn()" class="p-1.5 rounded bg-white dark:bg-slate-700 hover:bg-brand-500 hover:text-white transition-all">
+                                <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- File Content Container -->
+                    <div id="doc-content-body" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap max-h-[60vh] overflow-y-auto relative">
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+                            <i data-lucide="folder-open" class="w-12 h-12 text-slate-300 dark:text-slate-700"></i>
+                            <p>Select a source to investigate lines, view PDFs, and see interactive citations.</p>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Metadata Extraction -->
+                    <div id="extracted-metadata" class="hidden bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="cpu" class="w-4 h-4 text-brand-500"></i> Automatic Entity Extractor
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="meta-entities-grid">
+                            <!-- Populated with extracted stats/variables dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Financial Analyst (Excel Sandbox) -->
+                <div id="content-finance" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-slate-200">Financial Analyst Sandbox</h2>
+                            <p class="text-xs text-slate-400">Simulate local market scale, target units, and margin structures dynamically.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportSandboxData()" class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Interactive Sliders -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex justify-between">
+                                Retail Markup %
+                                <span id="val-markup" class="text-brand-500 font-bold">200%</span>
+                            </label>
+                            <input type="range" id="input-markup" min="50" max="400" value="200" step="10" oninput="recalculateFinance()" class="w-full accent-brand-500" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex justify-between">
+                                Target Monthly Volume
+                                <span id="val-volume" class="text-brand-500 font-bold">500 units</span>
+                            </label>
+                            <input type="range" id="input-volume" min="50" max="5000" value="500" step="50" oninput="recalculateFinance()" class="w-full accent-brand-500" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex justify-between">
+                                Base Batch Production Cost
+                                <span id="val-batch-cost" class="text-brand-500 font-bold">$0.00</span>
+                            </label>
+                            <input type="range" id="input-batch-cost" min="0" max="100" value="0.00" step="0.5" oninput="recalculateFinance()" class="w-full accent-brand-500" />
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary & Real-time Chart -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Spreadsheet Grid -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                            <div class="bg-slate-50 dark:bg-slate-800/60 px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                Unit Cost Analysis Sheet (Editable)
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 text-slate-400">
+                                            <th class="p-3">Component / Process</th>
+                                            <th class="p-3">Unit Cost ($)</th>
+                                            <th class="p-3">Supplier Source</th>
+                                            <th class="p-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="finance-table-rows" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                                        <!-- Dynamically generated rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Row Add Controls -->
+                            <div class="p-3 bg-slate-50/50 dark:bg-slate-800/10 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+                                <input type="text" id="add-comp-name" placeholder="New Ingredient / Part" class="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1 text-xs outline-none focus:border-brand-500" />
+                                <input type="number" id="add-comp-cost" step="0.01" placeholder="Cost ($)" class="w-20 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1 text-xs outline-none focus:border-brand-500" />
+                                <button onclick="addFinancialComponent()" class="bg-brand-500 hover:bg-brand-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center gap-1 transition-all">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Projection Chart -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-sm">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Monthly Cashflow Forecast</h3>
+                            <div class="h-48 relative">
+                                <canvas id="financeChart"></canvas>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 mt-4 text-center border-t border-slate-100 dark:border-slate-800 pt-3">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block uppercase font-medium">Monthly Cost</span>
+                                    <span id="proj-cost" class="text-xs font-bold text-accent-rose">$0.00</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block uppercase font-medium">Est. Revenue</span>
+                                    <span id="proj-revenue" class="text-xs font-bold text-brand-500">$0.00</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block uppercase font-medium">Gross Profit</span>
+                                    <span id="proj-profit" class="text-xs font-bold text-accent-emerald">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Playbook Generator -->
+                <div id="content-playbook" class="hidden space-y-6">
+                    <div class="border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-slate-200">Playbook Generator & Launch Timeline</h2>
+                            <p class="text-xs text-slate-400">Step-by-step local regulatory activation and product manufacturing milestones.</p>
+                        </div>
+                        <span class="text-xs bg-emerald-500/10 text-emerald-500 px-2.5 py-1 rounded-full font-bold border border-emerald-500/20">
+                            Milestones
+                        </span>
+                    </div>
+
+                    <!-- Progress Bar Header -->
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-slate-700 dark:text-slate-300">Total Playbook Progress</span>
+                            <span id="playbook-progress-percent" class="font-bold text-brand-500">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div id="playbook-progress-bar" class="bg-gradient-to-r from-brand-500 to-indigo-400 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Local launch Timeline -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Left Lane: Timeline -->
+                        <div class="space-y-4">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="git-commit" class="w-4 h-4 text-brand-500"></i> Local Launch Milestones
+                            </h3>
+                            <div class="border-l-2 border-brand-500/30 pl-4 space-y-6 ml-2 relative" id="playbook-timeline">
+                                <!-- Populated Dynamically -->
+                                <div class="text-xs text-slate-400 dark:text-slate-500 py-4 italic">
+                                    No milestones created yet. Add items below or parse compliance documents to extract milestones.
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Add Custom Milestone</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" id="add-ms-week" placeholder="e.g. Week 1" class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs outline-none" />
+                                    <input type="text" id="add-ms-title" placeholder="Milestone Title" class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs outline-none" />
+                                </div>
+                                <input type="text" id="add-ms-desc" placeholder="Brief description of requirements" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs outline-none" />
+                                <button onclick="addCustomMilestone()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-1 rounded text-xs transition-colors">
+                                    Add Milestone
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right Lane: Local Regulatory Checklist -->
+                        <div class="space-y-4">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="check-square" class="w-4 h-4 text-brand-500"></i> Municipal Permit & Safety Checklist
+                            </h3>
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 divide-y divide-slate-100 dark:divide-slate-800" id="playbook-checklist">
+                                <!-- Populated Dynamically -->
+                                <div class="text-xs text-slate-400 dark:text-slate-500 py-4 italic">
+                                    No compliance checklist items. Add a safety or zoning rule below.
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Add Custom Permit Rule</span>
+                                <input type="text" id="add-chk-item" placeholder="e.g. File Local Business Permit" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs outline-none" />
+                                <input type="text" id="add-chk-rule" placeholder="e.g. Zoning Code Title IV" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs outline-none" />
+                                <button onclick="addCustomChecklistItem()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-1 rounded text-xs transition-colors">
+                                    Add Checklist Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PANEL 3: RIGHT SIDEBAR (Agentic Chat Companion) -->
+        <aside id="panel-right" class="w-full md:w-96 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden shrink-0 hidden md:flex">
+            <!-- Header -->
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/60 shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-emerald opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-emerald"></span>
+                    </span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Agentic Companion</h2>
+                </div>
+                <button onclick="clearChat()" class="text-slate-400 hover:text-accent-rose text-xs flex items-center gap-1 transition-all">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Chat
+                </button>
+            </div>
+
+            <!-- Chat Output Container -->
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth">
+                <!-- Welcome Assistant Message -->
+                <div class="flex gap-3">
+                    <div class="w-7 h-7 rounded-lg bg-brand-500 text-white flex items-center justify-center shrink-0">
+                        <i data-lucide="bot" class="w-4.5 h-4.5"></i>
+                    </div>
+                    <div class="bg-slate-100 dark:bg-slate-800/60 rounded-xl p-3 text-xs max-w-[85%] leading-relaxed">
+                        <p class="font-semibold mb-1 text-slate-800 dark:text-slate-200">The Franchise Agent</p>
+                        Greetings! I am calibrated to analyze your local business documents. 
+                        To get started, please drag and drop or select your grounding files (like cost sheets, municipal codes, or marketing guidelines, **including PDFs**) in the resource manager on the left.
+                        <br/><br/>
+                        <strong class="text-brand-500">Direct Grounding:</strong> Once files are toggled active, I'll extract citations, line-by-line validation, and interactive pricing points automatically.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Prompts Bubble List -->
+            <div class="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/20 shrink-0">
+                <span class="text-[10px] font-bold text-slate-400 uppercase block tracking-wider">Suggested Actions</span>
+                <div class="flex flex-wrap gap-1.5">
+                    <button onclick="useQuickPrompt('Analyze the uploaded files and find total base margins.')" class="text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 rounded-lg px-2.5 py-1 text-slate-600 dark:text-slate-300 text-left truncate max-w-full transition-all">
+                        📊 Analyze profit margins
+                    </button>
+                    <button onclick="useQuickPrompt('Compile a compliance roadmap from the uploaded municipal regulations.')" class="text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 rounded-lg px-2.5 py-1 text-slate-600 dark:text-slate-300 text-left truncate max-w-full transition-all">
+                        📋 Draft regulatory timeline
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Inputs -->
+            <div class="p-3 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Ask about zoning, margins, launch campaigns..." class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:border-brand-500 transition-colors" />
+                    <button type="submit" class="bg-brand-500 hover:bg-brand-600 text-white font-bold p-2 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20 transition-all">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Global App State -->
+    <script>
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Store user and system sources
+        let sources = [];
+        let activeSourceId = null;
+        let selectedStudioTab = "viewer"; // viewer | finance | playbook
+        let mobileActivePanel = "center"; // left | center | right
+        let chatHistory = [];
+        let financialChart = null;
+
+        // Current loaded PDF document state
+        let currentPdfDoc = null;
+        let currentPdfPageNum = 1;
+        let currentPdfZoom = 1.0;
+
+        // Custom financial state representing the interactive grid components
+        let financialComponents = [];
+
+        // Extracted Playbook Items (Starts empty)
+        let playbookTimeline = [];
+        let regulatoryChecklist = [];
+
+        // API Key persistence
+        function saveApiKey(key) {
+            localStorage.setItem("gemini_blueprint_api_key", key);
+        }
+
+        // Get Saved API Key
+        function getSavedApiKey() {
+            return localStorage.getItem("gemini_blueprint_api_key") || "";
+        }
+
+        // Initialize application on load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Set saved API key if exists
+            const savedKey = getSavedApiKey();
+            if (savedKey) {
+                document.getElementById('api-key-input').value = savedKey;
+                handleApiKeyChange();
+            }
+
+            // Setup Theme UI state
+            if (localStorage.getItem('theme') === 'light') {
+                document.documentElement.classList.remove('dark');
+                updateThemeToggleIcon(false);
+            } else {
+                document.documentElement.classList.add('dark');
+                updateThemeToggleIcon(true);
+            }
+
+            // Initial UI Update (Starts completely empty)
+            renderSourcesList();
+
+            // Set up Drop Zone Listener
+            setupDropZone();
+
+            // Setup initial workspace charts & data
+            initFinancialAnalysis();
+            recalculateFinance();
+            renderPlaybook();
+        });
+
+        // Theme Toggle Mechanism
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeToggleIcon(isDark);
+        }
+
+        function updateThemeToggleIcon(isDark) {
+            const icon = document.getElementById('theme-icon');
+            if (icon) {
+                icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+                lucide.createIcons();
+            }
+        }
+
+        // API Key Field Interaction
+        function handleApiKeyChange() {
+            const keyInput = document.getElementById('api-key-input').value.trim();
+            const dot = document.getElementById('status-dot');
+            saveApiKey(keyInput);
+
+            if (keyInput.length > 20) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-accent-emerald pulse-indicator";
+                dot.title = "Gemini API Connected";
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-accent-amber pulse-indicator";
+                dot.title = "No valid key provided. Simulated local response mode active.";
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('api-key-input');
+            const eye = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                eye.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        // Dropzone file loading mechanism
+        function setupDropZone() {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-brand-500', 'bg-brand-500/10');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-brand-500', 'bg-brand-500/10');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-brand-500', 'bg-brand-500/10');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(fileList) {
+            Array.from(fileList).forEach(file => {
+                const cleanName = file.name;
+                const fileExtension = cleanName.split('.').pop().toLowerCase();
+                const sizeString = (file.size < 1024) ? `${file.size} B` : `${(file.size / 1024).toFixed(1)} KB`;
+
+                if (fileExtension === 'pdf') {
+                    // Read file as base64 so Gemini API can directly parse the actual PDF document
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const dataUrl = event.target.result;
+                        const base64Data = dataUrl.split(',')[1];
+                        
+                        const newSource = {
+                            id: 'src-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                            name: cleanName,
+                            type: fileExtension,
+                            size: sizeString,
+                            active: true,
+                            content: "[PDF binary content loaded successfully]",
+                            base64Content: base64Data
+                        };
+
+                        sources.push(newSource);
+                        renderSourcesList();
+                        selectDocument(newSource.id);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const textContent = event.target.result;
+                        const newSource = {
+                            id: 'src-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                            name: cleanName,
+                            type: fileExtension,
+                            size: sizeString,
+                            active: true,
+                            content: textContent
+                        };
+
+                        sources.push(newSource);
+                        renderSourcesList();
+                        selectDocument(newSource.id);
+
+                        // Try to extract pricing models dynamically if CSV
+                        if (fileExtension === 'csv') {
+                            parseCSVToFinance(textContent);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        }
+
+        function renderSourcesList() {
+            const container = document.getElementById('sources-list');
+            container.innerHTML = '';
+
+            if (sources.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 dark:text-slate-500 text-xs flex flex-col items-center gap-2">
+                        <i data-lucide="files" class="w-8 h-8 opacity-40"></i>
+                        <p>No documents uploaded yet.</p>
+                    </div>
+                `;
+                document.getElementById('active-count').innerText = "0/0";
+                lucide.createIcons();
+                return;
+            }
+
+            sources.forEach(src => {
+                const activeClass = src.id === activeSourceId ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-950/20' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50';
+                
+                let iconType = "file-text";
+                if (src.type === 'csv') iconType = "table-properties";
+                if (src.type === 'pdf') iconType = "file-spreadsheet"; // slick alternative layout indicator
+
+                cardColor = src.type === 'pdf' ? 'border-rose-500/20 bg-rose-500/5' : '';
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border ${activeClass} ${cardColor} cursor-pointer hover:border-brand-400 dark:hover:border-brand-600 transition-all flex flex-col gap-2`;
+                card.onclick = () => selectDocument(src.id);
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <i data-lucide="${iconType}" class="w-4 h-4 ${src.type === 'pdf' ? 'text-accent-rose' : 'text-brand-500'} shrink-0"></i>
+                            <span class="text-xs font-bold truncate text-slate-700 dark:text-slate-200">${src.name}</span>
+                        </div>
+                        <input type="checkbox" ${src.active ? 'checked' : ''} onchange="toggleSourceActive(event, '${src.id}')" class="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5 accent-brand-500 shrink-0 cursor-pointer" />
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Size: ${src.size}</span>
+                        <span class="font-semibold uppercase tracking-wide ${src.type === 'pdf' ? 'text-accent-rose' : 'text-brand-500'}">${src.type}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Update Counter
+            const activeCount = sources.filter(s => s.active).length;
+            document.getElementById('active-count').innerText = `${activeCount}/${sources.length}`;
+            lucide.createIcons();
+        }
+
+        function toggleSourceActive(event, id) {
+            event.stopPropagation();
+            const src = sources.find(s => s.id === id);
+            if (src) {
+                src.active = event.target.checked;
+                renderSourcesList();
+            }
+        }
+
+        function selectDocument(id) {
+            activeSourceId = id;
+            const src = sources.find(s => s.id === id);
+            if (!src) return;
+
+            // Highlight current in UI list
+            renderSourcesList();
+
+            // Set document content
+            document.getElementById('doc-title').innerText = src.name;
+            document.getElementById('doc-meta').innerText = `Document Type: ${src.type.toUpperCase()} | Resource Size: ${src.size}`;
+            document.getElementById('doc-size-badge').innerText = src.size;
+            document.getElementById('doc-size-badge').classList.remove('hidden');
+
+            const viewerBody = document.getElementById('doc-content-body');
+            const pdfControls = document.getElementById('pdf-controls');
+            
+            // Clean up old canvas elements or text
+            viewerBody.innerHTML = '';
+
+            if (src.type === 'pdf' && src.base64Content) {
+                pdfControls.classList.remove('hidden');
+                viewerBody.className = "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex justify-center items-start h-[65vh] overflow-y-auto relative";
+                
+                // Show a clean loading indicator
+                viewerBody.innerHTML = `
+                    <div id="pdf-loading" class="flex flex-col items-center justify-center h-full py-12 text-slate-400 gap-2">
+                        <i data-lucide="loader" class="w-8 h-8 animate-spin text-brand-500"></i>
+                        <p class="text-xs">Parsing PDF structures natively...</p>
+                    </div>
+                    <canvas id="pdf-render-canvas" class="shadow-lg border border-slate-200 dark:border-slate-800 max-w-full hidden bg-white"></canvas>
+                `;
+                lucide.createIcons();
+
+                // Initialize PDF.js loading
+                loadPdfOnCanvas(src.base64Content);
+            } else {
+                pdfControls.classList.add('hidden');
+                viewerBody.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap max-h-[60vh] overflow-y-auto relative";
+                
+                // Handle citation rendering highlights
+                const lines = src.content.split('\n');
+                lines.forEach((line, index) => {
+                    const lineEl = document.createElement('div');
+                    lineEl.id = `line-${src.id}-${index}`;
+                    lineEl.className = "py-0.5 px-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-all cursor-crosshair flex gap-3";
+                    lineEl.innerHTML = `
+                        <span class="text-slate-400 select-none text-right w-8 shrink-0">${index + 1}</span>
+                        <span class="text-slate-800 dark:text-slate-300 break-all">${escapeHtml(line)}</span>
+                    `;
+                    viewerBody.appendChild(lineEl);
+                });
+            }
+
+            // Render Extractable Entities Card
+            const entityGrid = document.getElementById('meta-entities-grid');
+            const entityContainer = document.getElementById('extracted-metadata');
+            entityGrid.innerHTML = '';
+            
+            // Parse some generic variables
+            let matchedVars = [];
+            if (src.type === 'csv') {
+                const lines = src.content.split('\n');
+                matchedVars = [
+                    { label: "Detected Items", val: lines.length - 1 + " rows" },
+                    { label: "Target Vendor Matrix", val: "Spreadsheet parsed" },
+                    { label: "Integrate Sandbox", val: "Sync with Finance Tab" }
+                ];
+            } else if (src.type === 'pdf') {
+                matchedVars = [
+                    { label: "Document Vector Format", val: "High Fidelity PDF" },
+                    { label: "Multimodal Grounding", val: "Natively Sent to Gemini" },
+                    { label: "Visual Interactive View", val: "Canvas Enabled" }
+                ];
+            } else {
+                const permitMatch = src.content.match(/(Class-\w|permit|bylaw|regulatory)/gi);
+                const timelineMatch = src.content.match(/(\d+\s*days|\d+\s*weeks|timeline)/gi);
+                matchedVars = [
+                    { label: "Regulatory References", val: permitMatch ? `${permitMatch.length} found` : 'None detected' },
+                    { label: "Timeline Benchmarks", val: timelineMatch ? `Approx ${timelineMatch[0]}` : 'N/A' },
+                    { label: "Active Context Link", val: "Interactive Chat Enabled" }
+                ];
+            }
+
+            matchedVars.forEach(v => {
+                const badge = document.createElement('div');
+                badge.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-xs";
+                badge.innerHTML = `
+                    <span class="text-[10px] text-slate-400 block font-medium">${v.label}</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200">${v.val}</span>
+                `;
+                entityGrid.appendChild(badge);
+            });
+            entityContainer.classList.remove('hidden');
+
+            // Switch Studio Panel view to "viewer"
+            switchStudioTab('viewer');
+        }
+
+        // PDF.js Canvas Rendering Engine
+        function loadPdfOnCanvas(base64Content) {
+            try {
+                // Convert base64 back to binary uint8array format
+                const rawBin = window.atob(base64Content);
+                const rawLength = rawBin.length;
+                const arrayBuffer = new Uint8Array(new ArrayBuffer(rawLength));
+
+                for (let i = 0; i < rawLength; i++) {
+                    arrayBuffer[i] = rawBin.charCodeAt(i);
+                }
+
+                // Load the document via pdf.js task promise
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                loadingTask.promise.then(function(pdf) {
+                    currentPdfDoc = pdf;
+                    currentPdfPageNum = 1;
+                    document.getElementById('pdf-total-pages').innerText = pdf.numPages;
+                    
+                    // Render page 1
+                    renderPdfPage(currentPdfPageNum);
+                }, function(error) {
+                    console.error("PDF Parsing error:", error);
+                    const loader = document.getElementById('pdf-loading');
+                    if (loader) {
+                        loader.innerHTML = `
+                            <i data-lucide="alert-triangle" class="w-8 h-8 text-accent-rose"></i>
+                            <p class="text-xs text-accent-rose">Failed to parse PDF: ${error.message}</p>
+                        `;
+                        lucide.createIcons();
+                    }
+                });
+            } catch (err) {
+                console.error("PDF array mapping exception:", err);
+            }
+        }
+
+        function renderPdfPage(num) {
+            if (!currentPdfDoc) return;
+            
+            // Get the specific page
+            currentPdfDoc.getPage(num).then(function(page) {
+                const canvas = document.getElementById('pdf-render-canvas');
+                const context = canvas.getContext('2d');
+                
+                // Compute viewport based on active zoom setting
+                const viewport = page.getViewport({ scale: currentPdfZoom });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+
+                // Perform the render action onto the canvas
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(function() {
+                    // Hide spinner, show canvas
+                    const loader = document.getElementById('pdf-loading');
+                    if (loader) loader.classList.add('hidden');
+                    canvas.classList.remove('hidden');
+
+                    // Sync index stats
+                    document.getElementById('pdf-current-page').innerText = num;
+                    document.getElementById('pdf-zoom-val').innerText = `${Math.round(currentPdfZoom * 100)}%`;
+                });
+            });
+        }
+
+        function pdfPrevPage() {
+            if (!currentPdfDoc || currentPdfPageNum <= 1) return;
+            currentPdfPageNum--;
+            renderPdfPage(currentPdfPageNum);
+        }
+
+        // PDF Navigation Controls
+        function pdfNextPage() {
+            if (!currentPdfDoc || currentPdfPageNum >= currentPdfDoc.numPages) return;
+            currentPdfPageNum++;
+            renderPdfPage(currentPdfPageNum);
+        }
+
+        function pdfZoomIn() {
+            if (currentPdfZoom >= 2.5) return;
+            currentPdfZoom += 0.25;
+            renderPdfPage(currentPdfPageNum);
+        }
+
+        function pdfZoomOut() {
+            if (currentPdfZoom <= 0.5) return;
+            currentPdfZoom -= 0.25;
+            renderPdfPage(currentPdfPageNum);
+        }
+
+        // Escape HTML helper
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Tab switches (Studio)
+        function switchStudioTab(tab) {
+            selectedStudioTab = tab;
+            
+            const tabs = ['viewer', 'finance', 'playbook'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const panel = document.getElementById(`content-${t}`);
+                if (t === tab) {
+                    btn.className = "flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-500 text-white shadow-sm transition-all";
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.className = "flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all";
+                    panel.classList.add('hidden');
+                }
+            });
+
+            // Handle special sizing triggers
+            if (tab === 'finance' && financialChart) {
+                financialChart.resize();
+            }
+        }
+
+        // Mobile responsive panel switcher
+        function switchMobilePanel(panel) {
+            mobileActivePanel = panel;
+            const pLeft = document.getElementById('panel-left');
+            const pCenter = document.getElementById('panel-center');
+            const pRight = document.getElementById('panel-right');
+
+            const tabLeft = document.getElementById('mobile-tab-left');
+            const tabCenter = document.getElementById('mobile-tab-center');
+            const tabRight = document.getElementById('mobile-tab-right');
+
+            // Toggle visibility classes
+            if (panel === 'left') {
+                pLeft.classList.remove('hidden');
+                pCenter.classList.add('hidden');
+                pRight.classList.add('hidden');
+
+                tabLeft.className = "flex-1 py-1 text-xs font-medium rounded-md text-center bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white";
+                tabCenter.className = "flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400";
+                tabRight.className = "flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400";
+            } else if (panel === 'center') {
+                pLeft.classList.add('hidden');
+                pCenter.classList.remove('hidden');
+                pCenter.classList.add('flex');
+                pRight.classList.add('hidden');
+
+                tabLeft.className = "flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400";
+                tabCenter.className = "flex-1 py-1 text-xs font-medium rounded-md text-center bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white";
+                tabRight.className = "flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400";
+            } else {
+                pLeft.classList.add('hidden');
+                pCenter.classList.add('hidden');
+                pRight.classList.remove('hidden');
+                pRight.classList.add('flex');
+
+                tabLeft.className = "flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400";
+                tabCenter.className = "flex-1 py-1 text-xs font-medium rounded-md text-center text-slate-500 dark:text-slate-400";
+                tabRight.className = "flex-1 py-1 text-xs font-medium rounded-md text-center bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white";
+            }
+        }
+
+        // FINANCIAL EXCEL SANDBOX ENGINE
+        function initFinancialAnalysis() {
+            // Initialize completely empty so user can insert custom data lines
+            financialComponents = [];
+        }
+
+        function parseCSVToFinance(csvText) {
+            const lines = csvText.split('\n');
+            if (lines.length < 2) return;
+
+            financialComponents = [];
+            // Basic heuristic CSV parsing: Item, Unit Cost, Supplier
+            for(let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if (cols.length >= 2) {
+                    const name = cols[0].trim();
+                    const cost = parseFloat(cols[1].replace(/[^0-9.]/g, '')) || 0;
+                    const supplier = cols[2] ? cols[2].trim() : 'External';
+                    if (name) {
+                        financialComponents.push({
+                            id: Date.now() + i,
+                            name: name,
+                            cost: cost,
+                            supplier: supplier
+                        });
+                    }
+                }
+            }
+            recalculateFinance();
+        }
+
+        function renderFinancialTable() {
+            const container = document.getElementById('finance-table-rows');
+            container.innerHTML = '';
+
+            if (financialComponents.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="p-4 text-center text-slate-400 dark:text-slate-500 italic">
+                            No components added yet. Insert row below or upload a CSV file.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            financialComponents.forEach((comp, idx) => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 transition-colors";
+                row.innerHTML = `
+                    <td class="p-3 font-medium">${comp.name}</td>
+                    <td class="p-3">
+                        <input type="number" step="0.1" value="${comp.cost.toFixed(2)}" onchange="updateComponentCost(${comp.id}, this.value)" class="w-16 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500" />
+                    </td>
+                    <td class="p-3 text-slate-400">${comp.supplier}</td>
+                    <td class="p-3">
+                        <button onclick="removeFinancialComponent(${comp.id})" class="text-accent-rose hover:text-rose-700">
+                            <i data-lucide="trash" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        function updateComponentCost(id, val) {
+            const comp = financialComponents.find(c => c.id === id);
+            if (comp) {
+                comp.cost = parseFloat(val) || 0;
+                recalculateFinance();
+            }
+        }
+
+        function removeFinancialComponent(id) {
+            financialComponents = financialComponents.filter(c => c.id !== id);
+            recalculateFinance();
+        }
+
+        function addFinancialComponent() {
+            const nameInput = document.getElementById('add-comp-name');
+            const costInput = document.getElementById('add-comp-cost');
+            const name = nameInput.value.trim();
+            const cost = parseFloat(costInput.value) || 0;
+
+            if (name && cost >= 0) {
+                financialComponents.push({
+                    id: Date.now(),
+                    name: name,
+                    cost: cost,
+                    supplier: "Manual Entry"
+                });
+                nameInput.value = '';
+                costInput.value = '';
+                recalculateFinance();
+            }
+        }
+
+        function recalculateFinance() {
+            // Recalculate based on current components
+            let totalUnitCost = financialComponents.reduce((sum, item) => sum + item.cost, 0);
+            
+            // Set slider values & calculations
+            const markupInput = document.getElementById('input-markup');
+            const volumeInput = document.getElementById('input-volume');
+            const batchCostInput = document.getElementById('input-batch-cost');
+
+            const markup = parseInt(markupInput.value);
+            const volume = parseInt(volumeInput.value);
+            
+            // Sync slider labels
+            document.getElementById('val-markup').innerText = `${markup}%`;
+            document.getElementById('val-volume').innerText = `${volume} units`;
+
+            // Update Unit Cost slider representation if not changed manually
+            // Let the slider override or match unit sum
+            let selectedUnitCost = parseFloat(batchCostInput.value);
+            if (Math.abs(selectedUnitCost - totalUnitCost) > 0.01 || selectedUnitCost === 0) {
+                // Adjust slider value to reflect the computed sum
+                batchCostInput.value = totalUnitCost.toFixed(2);
+                selectedUnitCost = totalUnitCost;
+            }
+            document.getElementById('val-batch-cost').innerText = `$${selectedUnitCost.toFixed(2)}`;
+
+            // Profit math
+            const targetRetailPrice = selectedUnitCost * (1 + (markup / 100));
+            const monthlyRevenue = targetRetailPrice * volume;
+            const monthlyCost = selectedUnitCost * volume;
+            const grossProfit = monthlyRevenue - monthlyCost;
+
+            // Update UI elements
+            document.getElementById('proj-cost').innerText = `$${monthlyCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('proj-revenue').innerText = `$${monthlyRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('proj-profit').innerText = `$${grossProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            // Render table
+            renderFinancialTable();
+
+            // Refresh Dynamic Projection Chart
+            updateChartProjections(selectedUnitCost, targetRetailPrice, volume);
+        }
+
+        function updateChartProjections(unitCost, retailPrice, volume) {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            
+            const volumes = [0, Math.floor(volume * 0.25), Math.floor(volume * 0.5), Math.floor(volume * 0.75), volume, Math.floor(volume * 1.25)];
+            const costs = volumes.map(v => v * unitCost);
+            const revenues = volumes.map(v => v * retailPrice);
+            const profits = volumes.map((v, idx) => revenues[idx] - costs[idx]);
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? '#334155' : '#cbd5e1';
+            const labelColor = isDark ? '#94a3b8' : '#475569';
+
+            if (financialChart) {
+                financialChart.destroy();
+            }
+
+            financialChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: volumes.map(v => v + ' u'),
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: revenues,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Total Expenses',
+                            data: costs,
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Net Profit',
+                            data: profits,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: labelColor,
+                                font: { size: 10 }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { color: labelColor, font: { size: 9 } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { color: labelColor, font: { size: 9 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportSandboxData() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Component,Cost,Supplier\n";
+            financialComponents.forEach(comp => {
+                csvContent += `"${comp.name}",${comp.cost},"${comp.supplier}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "custom_franchise_financial_sandbox.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+
+        // PLAYBOOK TIMELINE & REGULATORY PROGRESS TRACKER
+        function renderPlaybook() {
+            const timelineContainer = document.getElementById('playbook-timeline');
+            timelineContainer.innerHTML = '';
+
+            if (playbookTimeline.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div class="text-xs text-slate-400 dark:text-slate-500 py-4 italic">
+                        No milestones created yet. Add items below or parse compliance documents to extract milestones.
+                    </div>
+                `;
+            } else {
+                playbookTimeline.forEach(task => {
+                    const step = document.createElement('div');
+                    step.className = "relative mb-6";
+                    step.innerHTML = `
+                        <div class="absolute -left-[25px] mt-1 bg-white dark:bg-slate-900 border-2 ${task.completed ? 'border-accent-emerald text-accent-emerald' : 'border-slate-300 dark:border-slate-700 text-slate-400'} rounded-full w-5 h-5 flex items-center justify-center">
+                            <i data-lucide="${task.completed ? 'check' : 'circle'}" class="w-3 h-3"></i>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-start justify-between gap-3">
+                            <div>
+                                <span class="text-[10px] text-brand-500 font-bold tracking-wider uppercase block">${task.week}</span>
+                                <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">${task.task}</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">${task.desc}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskCompleted(${task.id})" class="rounded text-brand-600 focus:ring-brand-500 w-4 h-4 accent-brand-500 cursor-pointer" />
+                                <button onclick="removeMilestone(${task.id})" class="text-slate-400 hover:text-accent-rose transition-colors">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    timelineContainer.appendChild(step);
+                });
+            }
+
+            // Checklist
+            const checklistContainer = document.getElementById('playbook-checklist');
+            checklistContainer.innerHTML = '';
+
+            if (regulatoryChecklist.length === 0) {
+                checklistContainer.innerHTML = `
+                    <div class="text-xs text-slate-400 dark:text-slate-500 py-4 italic">
+                        No compliance checklist items. Add a safety or zoning rule below.
+                    </div>
+                `;
+            } else {
+                regulatoryChecklist.forEach(check => {
+                    const item = document.createElement('div');
+                    item.className = "flex items-center justify-between py-2.5 gap-3";
+                    item.innerHTML = `
+                        <div class="flex items-start gap-2 min-w-0">
+                            <input type="checkbox" ${check.completed ? 'checked' : ''} onchange="toggleChecklistCompleted(${check.id})" class="rounded text-brand-600 focus:ring-brand-500 w-4 h-4 accent-brand-500 mt-0.5 shrink-0 cursor-pointer" />
+                            <div class="min-w-0">
+                                <span class="text-xs font-medium text-slate-700 dark:text-slate-200 block truncate ${check.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${check.item}</span>
+                                <span class="text-[9px] text-slate-400 uppercase font-bold tracking-wide">${check.rule}</span>
+                            </div>
+                        </div>
+                        <button onclick="removeChecklistItem(${check.id})" class="text-slate-400 hover:text-accent-rose transition-colors shrink-0">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    `;
+                    checklistContainer.appendChild(item);
+                });
+            }
+
+            // Calculate progress percent
+            const totalTasks = playbookTimeline.length + regulatoryChecklist.length;
+            const completedTasks = playbookTimeline.filter(t => t.completed).length + regulatoryChecklist.filter(c => c.completed).length;
+            const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            document.getElementById('playbook-progress-percent').innerText = `${percent}%`;
+            document.getElementById('playbook-progress-bar').style.width = `${percent}%`;
+
+            lucide.createIcons();
+        }
+
+        function addCustomMilestone() {
+            const weekInput = document.getElementById('add-ms-week');
+            const titleInput = document.getElementById('add-ms-title');
+            const descInput = document.getElementById('add-ms-desc');
+
+            const week = weekInput.value.trim() || "Milestone";
+            const title = titleInput.value.trim();
+            const desc = descInput.value.trim();
+
+            if (title) {
+                playbookTimeline.push({
+                    id: Date.now(),
+                    week: week,
+                    task: title,
+                    desc: desc || "Custom milestone requirements",
+                    completed: false
+                });
+                weekInput.value = '';
+                titleInput.value = '';
+                descInput.value = '';
+                renderPlaybook();
+            }
+        }
+
+        function addCustomChecklistItem() {
+            const itemInput = document.getElementById('add-chk-item');
+            const ruleInput = document.getElementById('add-chk-rule');
+
+            const item = itemInput.value.trim();
+            const rule = ruleInput.value.trim() || "General Standard";
+
+            if (item) {
+                regulatoryChecklist.push({
+                    id: Date.now(),
+                    item: item,
+                    rule: rule,
+                    completed: false
+                });
+                itemInput.value = '';
+                ruleInput.value = '';
+                renderPlaybook();
+            }
+        }
+
+        function toggleTaskCompleted(id) {
+            const task = playbookTimeline.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                renderPlaybook();
+            }
+        }
+
+        function toggleChecklistCompleted(id) {
+            const check = regulatoryChecklist.find(c => c.id === id);
+            if (check) {
+                check.completed = !check.completed;
+                renderPlaybook();
+            }
+        }
+
+        // Action controls
+        function removeMilestone(id) {
+            playbookTimeline = playbookTimeline.filter(t => t.id !== id);
+            renderPlaybook();
+        }
+
+        function removeChecklistItem(id) {
+            regulatoryChecklist = regulatoryChecklist.filter(c => c.id !== id);
+            renderPlaybook();
+        }
+
+
+        // AGENTIC CHAT COMPANION & GEMINI GROUNDING API ENGINE
+
+        // Helper to format line highlighting anchor
+        function formatCitationAnchor(sourceName, lineStr) {
+            const matchedSrc = sources.find(s => s.name.toLowerCase().includes(sourceName.toLowerCase()));
+            if (matchedSrc) {
+                return `<button onclick="focusOnCitation('${matchedSrc.id}', '${lineStr}')" class="px-1.5 py-0.5 mx-0.5 rounded bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-800 hover:bg-brand-500 hover:text-white transition-all text-[10px] inline-flex items-center gap-1 font-mono font-bold">
+                    <i data-lucide="hash" class="w-2.5 h-2.5"></i> ${sourceName}
+                </button>`;
+            }
+            return `<span class="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono font-bold text-slate-500">${sourceName}</span>`;
+        }
+
+        function focusOnCitation(sourceId, rawLineText) {
+            // Switch tabs
+            switchStudioTab('viewer');
+            selectDocument(sourceId);
+
+            // Locate matching text (for non-PDF text highlights)
+            setTimeout(() => {
+                const linesEl = document.querySelectorAll(`[id^="line-${sourceId}-"]`);
+                let matchedElement = null;
+
+                for (let el of linesEl) {
+                    if (el.innerText.toLowerCase().includes(rawLineText.toLowerCase())) {
+                        matchedElement = el;
+                        break;
+                    }
+                }
+
+                if (matchedElement) {
+                    matchedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    matchedElement.classList.add('bg-brand-100', 'dark:bg-brand-900/40', 'ring-2', 'ring-brand-500');
+                    setTimeout(() => {
+                        matchedElement.classList.remove('bg-brand-100', 'dark:bg-brand-900/40', 'ring-2', 'ring-brand-500');
+                    }, 4000);
+                }
+            }, 300);
+        }
+
+        // Parse citation patterns (e.g. [Filename.txt: Line X] or [Filename: Line X] or [Filename])
+        function parseAgentCitations(text) {
+            const citationRegex = /\[([^\]]+?)(?::\s*Line\s*(\d+))?\]/gi;
+            return text.replace(citationRegex, (match, srcName, lineNum) => {
+                return formatCitationAnchor(srcName.trim(), lineNum ? `Line ${lineNum}` : srcName.trim());
+            });
+        }
+
+        function clearChat() {
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="flex gap-3">
+                    <div class="w-7 h-7 rounded-lg bg-brand-500 text-white flex items-center justify-center shrink-0">
+                        <i data-lucide="bot" class="w-4.5 h-4.5"></i>
+                    </div>
+                    <div class="bg-slate-100 dark:bg-slate-800/60 rounded-xl p-3 text-xs max-w-[85%] leading-relaxed">
+                        <p class="font-semibold mb-1 text-slate-800 dark:text-slate-200">The Franchise Agent</p>
+                        Workspace reset. Drop some files or state a query to re-engage localized context tracking!
+                    </div>
+                </div>
+            `;
+            chatHistory = [];
+            lucide.createIcons();
+        }
+
+        function useQuickPrompt(promptText) {
+            document.getElementById('chat-input').value = promptText;
+            document.getElementById('chat-form').requestSubmit();
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const messageText = input.value.trim();
+            if (!messageText) return;
+
+            // Render User Bubble
+            appendMessage("User", messageText, "user");
+            input.value = '';
+
+            // Render Loading Spinner Bubble
+            const loadingId = 'loading-' + Date.now();
+            appendLoadingBubble(loadingId);
+
+            // Construct Grounded Query and API dispatch
+            try {
+                const response = await dispatchGroundedAgent(messageText);
+                removeLoadingBubble(loadingId);
+                appendMessage("The Franchise Agent", response, "bot");
+            } catch (err) {
+                removeLoadingBubble(loadingId);
+                appendMessage("System Alert", `Could not connect to AI. Error: ${err.message}. Showing simulated local grounding prediction instead below!`, "system");
+                
+                // Fallback / Simulated Response Generator (keeps app perfectly functional offline)
+                const mockAnswer = generateLocalMockGrounding(messageText);
+                appendMessage("The Franchise Agent (Local Simulation Mode)", mockAnswer, "bot");
+            }
+        }
+
+        function appendMessage(sender, text, role) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const bubble = document.createElement('div');
+            bubble.className = "flex gap-3";
+
+            // Format styling
+            let avatarHtml = "";
+            let bubbleClass = "";
+            
+            if (role === 'user') {
+                avatarHtml = `<div class="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-4.5 h-4.5"></i></div>`;
+                bubbleClass = "bg-brand-500/10 dark:bg-brand-500/20 text-slate-800 dark:text-slate-200 ml-auto border border-brand-500/20";
+            } else if (role === 'system') {
+                avatarHtml = `<div class="w-7 h-7 rounded-lg bg-accent-rose text-white flex items-center justify-center shrink-0"><i data-lucide="info" class="w-4.5 h-4.5"></i></div>`;
+                bubbleClass = "bg-red-500/10 border border-red-500/20 text-accent-rose";
+            } else {
+                avatarHtml = `<div class="w-7 h-7 rounded-lg bg-brand-500 text-white flex items-center justify-center shrink-0"><i data-lucide="bot" class="w-4.5 h-4.5"></i></div>`;
+                bubbleClass = "bg-slate-100 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200";
+            }
+
+            // Convert raw newlines to breaks and parse Markdown/Citations
+            const parsedText = parseMarkdownAndFormatting(text);
+
+            bubble.innerHTML = `
+                ${role !== 'user' ? avatarHtml : ''}
+                <div class="${bubbleClass} rounded-xl p-3 text-xs max-w-[85%] leading-relaxed">
+                    <p class="font-semibold mb-1 text-slate-900 dark:text-slate-100">${sender}</p>
+                    <div>${parsedText}</div>
+                </div>
+                ${role === 'user' ? avatarHtml : ''}
+            `;
+
+            messagesContainer.appendChild(bubble);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            lucide.createIcons();
+        }
+
+        function appendLoadingBubble(id) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const bubble = document.createElement('div');
+            bubble.id = id;
+            bubble.className = "flex gap-3";
+            bubble.innerHTML = `
+                <div class="w-7 h-7 rounded-lg bg-brand-500 text-white flex items-center justify-center shrink-0">
+                    <i data-lucide="loader" class="w-4.5 h-4.5 animate-spin"></i>
+                </div>
+                <div class="bg-slate-100 dark:bg-slate-800/60 rounded-xl p-3 text-xs max-w-[85%] leading-relaxed flex items-center gap-2">
+                    <span class="font-semibold text-slate-500 dark:text-slate-400">Consulting grounded context vectors...</span>
+                </div>
+            `;
+            messagesContainer.appendChild(bubble);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            lucide.createIcons();
+        }
+
+        function removeLoadingBubble(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function parseMarkdownAndFormatting(text) {
+            // Apply citation parsing first
+            let result = parseAgentCitations(text);
+            
+            // Bold parser
+            result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Newlines
+            result = result.replace(/\n/g, '<br/>');
+
+            return result;
+        }
+
+        // Dispatches request directly to the Gemini 2.5 Flash Endpoint
+        async function dispatchGroundedAgent(userPrompt) {
+            const apiKey = getSavedApiKey();
+            if (!apiKey) {
+                throw new Error("No Gemini API key supplied in Top Bar.");
+            }
+
+            // Build active grounding context parts
+            const activeSources = sources.filter(s => s.active);
+            let parts = [];
+            let contextText = "ACTIVE SOURCE DOCUMENTS:\n\n";
+
+            if (activeSources.length === 0) {
+                contextText += "No source documents are active.\n";
+            } else {
+                activeSources.forEach(s => {
+                    if (s.type === 'pdf' && s.base64Content) {
+                        // Natively attach document binary metadata to the Flash model session!
+                        parts.push({
+                            inlineData: {
+                                mimeType: "application/pdf",
+                                data: s.base64Content
+                            }
+                        });
+                    } else {
+                        contextText += `--- START OF FILE: ${s.name} ---\n`;
+                        contextText += s.content;
+                        contextText += `\n--- END OF FILE: ${s.name} ---\n\n`;
+                    }
+                });
+            }
+
+            const systemPrompt = `
+You are "The Franchise Blueprint" AI agent—a premium corporate strategy partner for hyper-local franchise operations, custom manufacturing ventures, and general business planning.
+
+Your core architecture is designed to be highly agentic, versatile, and companion-focused.
+
+CRITICAL PROTOCOLS:
+1. AGENTIC ADAPTABILITY: If the user query is a general knowledge question (e.g., "who is the founder of google", "what is photosynthesis", general programming tasks, history, conversational prompts, etc.) that does not rely on uploaded documents, you must act as a general AI agent and answer it directly, fully, and intelligently. Do not refuse, do not demand documents for general queries.
+2. SPELLING & TERM CORRECTION: Users may have typos like "perfum", "scruber", "regulashuns", or "bylos". Automatically normalize these to standard professional spelling in your analysis and response, without explicitly correcting or patronizing the user.
+3. EXPLICIT CITATIONS MANDATORY: Only when the query directly pertains to the active uploaded files, you must cite every claim, regulatory guideline, margin metric, or social hook you reference using brackets matching the file name in the format: [Source Name: Line X] or [Source Name] (e.g., [ScentCraft Cost & Supplier Sheet.csv], [Municipal Zoning & Health Regulations.txt: Line 4]). For general knowledge questions, do not invent citations.
+4. EXTRAPOLATION WARNING: If a franchise analysis prompt asks for estimates or configurations not found in the source documents, clearly formulate a projection based on traditional business frameworks but explicitly label it: "PROJECTION / MODELING ESTIMATE".
+`;
+
+            // Append final prompt instruction as a trailing part
+            parts.push({
+                text: `CONTEXT:\n${contextText}\n\nUSER INQUIRY:\n${userPrompt}`
+            });
+
+            const payload = {
+                contents: [
+                    {
+                        parts: parts
+                    }
+                ],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            // Using production Gemini 2.5 Flash model endpoint
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+            // Robust exponential backoff fetch engine (up to 5 retries)
+            const maxRetries = 5;
+            let currentDelay = 1000; // start with 1s
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`API returned status ${response.status}: ${errText}`);
+                    }
+
+                    const json = await response.json();
+                    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) {
+                        throw new Error("Empty candidate list received from generative endpoint.");
+                    }
+                    return text;
+                } catch (err) {
+                    if (attempt === maxRetries) {
+                        throw err; // Final fail
+                    }
+                    // Wait and escalate delay
+                    await new Promise(resolve => setTimeout(resolve, currentDelay));
+                    currentDelay *= 2; // Double delay duration
+                }
+            }
+        }
+
+        // Local Smart Context Simulation when API is Offline/Key is Unset
+        function generateLocalMockGrounding(query) {
+            const q = query.toLowerCase().trim();
+            
+            // Handle general knowledge queries in mock offline mode
+            if (q.includes("founder of google") || q.includes("who founded google")) {
+                return `**Google** was founded by **Larry Page** and **Sergey Brin** in September 1998 while they were Ph.D. students at Stanford University. \n\n*(Note: This is an offline simulation answer. To unlock the live Gemini 2.5 Flash model, enter an API key in the top bar!)*`;
+            }
+            if (q.includes("founder of") || q.includes("who is the founder of")) {
+                return `To get deep, verified real-time profiles of company founders, connect your live **Gemini 2.5 Flash API Key** in the top bar!`;
+            }
+            if (q.includes("hello world") || q.includes("write a code") || q.includes("write code")) {
+                return `Here is a quick Python script example:\n\n\`\`\`python\n# Simple Hello World program\nprint("Hello, World!")\n\`\`\``;
+            }
+            
+            // Check spelling/term corrections
+            let typoFixedNote = "";
+            let processedQuery = q;
+            if (q.includes("perfum")) {
+                typoFixedNote = "*(Automatically normalized 'perfum' to 'perfume')* \n\n";
+                processedQuery = processedQuery.replace("perfum", "perfume");
+            }
+            if (q.includes("regulashuns") || q.includes("bylos")) {
+                typoFixedNote = "*(Automatically normalized local regulation bylaws terminology)* \n\n";
+            }
+
+            if (sources.length === 0) {
+                return `I notice you haven't uploaded any business files yet. Please use the drag-and-drop zone on the left to add local CSV, TXT, or PDF files. Once uploaded, I can perform localized grounding assessments instantly!`;
+            }
+
+            // Margin/Pricing Queries
+            if (processedQuery.includes("margin") || processedQuery.includes("cost") || processedQuery.includes("price") || processedQuery.includes("wholesale")) {
+                const totalUnitCost = financialComponents.reduce((sum, item) => sum + item.cost, 0);
+                const markup = parseInt(document.getElementById('input-markup').value);
+                const price = totalUnitCost * (1 + (markup / 100));
+
+                if (financialComponents.length === 0) {
+                    return `Your financial analyst sheet is currently empty. Add manufacturing components inside the **Financial Analyst** tab, or upload a structured CSV to start calculating dynamic margins.`;
+                }
+
+                return `${typoFixedNote}Based on your custom cost components, your base batch production unit cost is calculated at **$${totalUnitCost.toFixed(2)}**.
+
+With a simulated retail markup of **${markup}%**, the target retail price is modeled at **$${price.toFixed(2)}**.
+
+*PROJECTION / MODELING ESTIMATE:* At a Target Monthly Volume of **${document.getElementById('input-volume').value} units**, your projected revenue streams and profitability are updated in real-time inside the **Financial Analyst** tab.`;
+            }
+
+            // Permits / Zoning Compliance Queries
+            if (processedQuery.includes("permit") || processedQuery.includes("compliance") || processedQuery.includes("zone") || processedQuery.includes("zoning")) {
+                return `${typoFixedNote}I am ready to help cross-reference zoning or safety mandates. Once you upload municipal zoning texts or health code manuals, I'll extract concrete timelines and organize your local launch checklist automatically.`;
+            }
+
+            // General Answer Grounding Fallback
+            return `${typoFixedNote}I am prepared to parse your uploaded franchise documents. Please upload:
+1. Pricing or ingredient logs (.csv)
+2. Local zoning ordinances or building bylaws (.txt / .md)
+3. Promotional strategy personas (.txt / .md)
+
+Then ask me to outline margins, compile action items, or format launch content!`;
+        }
+    </script>
+</body>
+</html>
